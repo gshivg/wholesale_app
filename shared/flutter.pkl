@@ -1,0 +1,8 @@
+// Renders config.pkl as the Flutter asset: mobile/assets/config/shared.yaml
+// Server-only sections (otp) are stripped.
+import "config.pkl" as cfg
+
+output {
+  value = cfg.toMap().remove("otp")
+  renderer = new YamlRenderer { omitNullProperties = true }
+}

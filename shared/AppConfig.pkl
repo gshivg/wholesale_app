@@ -1,0 +1,103 @@
+/// Schema for the single source of truth shared by the Laravel server and the Flutter app.
+/// Render with `make config` (see ../Makefile) – never edit the generated files by hand.
+module AppConfig
+
+class Brand {
+  name: String
+  tagline: String
+  supportEmail: String
+  supportPhone: String
+  /// Hex colours, `#RRGGBB`
+  royalBlue: String(matches(Regex(#"#[0-9A-Fa-f]{6}"#)))
+  royalBlueDark: String(matches(Regex(#"#[0-9A-Fa-f]{6}"#)))
+  gold: String(matches(Regex(#"#[0-9A-Fa-f]{6}"#)))
+  goldLight: String(matches(Regex(#"#[0-9A-Fa-f]{6}"#)))
+  ivory: String(matches(Regex(#"#[0-9A-Fa-f]{6}"#)))
+}
+
+class Company {
+  legalName: String
+  gstin: String
+  stateCode: String
+  stateName: String
+  address: String
+}
+
+class Locale {
+  code: String
+  name: String
+  enabled: Boolean
+}
+
+class Stage {
+  key: String
+  label: String
+  /// Which staff role moves an order *into* this stage. `customer` = system/placed by shopkeeper.
+  actor: String
+  description: String
+}
+
+class TicketCategory {
+  key: String
+  label: String
+}
+
+class ServiceArea {
+  district: String
+  /// First three digits of the PIN codes served
+  pinPrefix: String
+  hubCode: String
+}
+
+class Slab {
+  minSubtotal: Int
+  percent: Number
+}
+
+class Gst {
+  allowedRates: Listing<Number>
+  defaultRate: Number
+}
+
+class Orders {
+  minOrderValue: Int
+  minTotalCases: Int
+  stages: Listing<Stage>
+  /// Statuses from which a shopkeeper may still cancel
+  customerCancellable: Listing<String>
+  paymentMethods: Listing<String>
+}
+
+class Support {
+  categories: Listing<TicketCategory>
+  statuses: Listing<String>
+  priorities: Listing<String>
+}
+
+class Payments {
+  /// `sandbox` (built-in simulator) – the gateway interface allows swapping later.
+  gateway: String
+  currency: String
+  currencySymbol: String
+  testCards: Mapping<String, String>
+}
+
+class Otp {
+  length: Int
+  ttlMinutes: Int
+  /// Prototype only: every OTP is this value. Server-side only.
+  prototypeCode: String
+}
+
+brand: Brand
+company: Company
+defaultLocale: String
+locales: Listing<Locale>
+gst: Gst
+orders: Orders
+pricingSlabs: Listing<Slab>
+shopTypes: Listing<String>
+serviceAreas: Listing<ServiceArea>
+support: Support
+payments: Payments
+otp: Otp

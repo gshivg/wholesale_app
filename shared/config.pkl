@@ -1,0 +1,95 @@
+amends "AppConfig.pkl"
+
+brand {
+  name = "Royal Snacks"            // placeholder brand
+  tagline = "Wholesale snacks, delivered to your shelf"
+  supportEmail = "support@royalsnacks.example"
+  supportPhone = "+91 90000 00000"
+  royalBlue = "#1B3A8C"
+  royalBlueDark = "#0F2461"
+  gold = "#D4A017"
+  goldLight = "#F4D675"
+  ivory = "#FBF8EF"
+}
+
+company {
+  legalName = "Royal Snacks Foods Pvt. Ltd."
+  gstin = "09AAAAA0000A1Z5"
+  stateCode = "09"
+  stateName = "Uttar Pradesh"
+  address = "Industrial Area, Naini, Prayagraj, Uttar Pradesh 211008"
+}
+
+defaultLocale = "en"
+locales {
+  new { code = "en"; name = "English"; enabled = true }
+  new { code = "hi"; name = "हिन्दी"; enabled = false } // scaffolding only; flip to true once translated
+}
+
+gst {
+  allowedRates { 0; 5; 12; 18 }
+  defaultRate = 12
+}
+
+orders {
+  minOrderValue = 2000
+  minTotalCases = 5
+  stages {
+    new { key = "placed";           label = "Order placed";       actor = "customer";      description = "We received your order." }
+    new { key = "confirmed";        label = "Confirmed";          actor = "order_manager"; description = "Order verified and confirmed." }
+    new { key = "packing";          label = "Packing";            actor = "packaging";     description = "Our packaging station is preparing your cases." }
+    new { key = "packed";           label = "Packed";             actor = "packaging";     description = "Packed and waiting at the warehouse." }
+    new { key = "dispatched";       label = "Left warehouse";     actor = "warehouse";     description = "Your parcel has left the warehouse." }
+    new { key = "out_for_delivery"; label = "Out for delivery";   actor = "delivery";      description = "Our delivery partner is on the way." }
+    new { key = "delivered";        label = "Delivered";          actor = "delivery";      description = "Delivered to your shop." }
+  }
+  customerCancellable { "placed"; "confirmed" }
+  paymentMethods { "cod"; "credit"; "online" }
+}
+
+pricingSlabs {
+  new { minSubtotal = 10000; percent = 2 }
+  new { minSubtotal = 25000; percent = 4 }
+  new { minSubtotal = 50000; percent = 6 }
+}
+
+shopTypes { "Kirana / General store"; "Supermarket"; "Convenience store"; "Medical / Pharmacy store"; "Sweet shop / Bakery"; "Canteen / Institution"; "Other" }
+
+serviceAreas {
+  new { district = "Prayagraj"; pinPrefix = "211"; hubCode = "PRG" }
+  new { district = "Varanasi";  pinPrefix = "221"; hubCode = "VNS" }
+  new { district = "Kanpur";    pinPrefix = "208"; hubCode = "KNP" }
+  new { district = "Lucknow";   pinPrefix = "226"; hubCode = "LKO" }
+}
+
+support {
+  categories {
+    new { key = "damaged";  label = "Damaged product" }
+    new { key = "missing";  label = "Missing item" }
+    new { key = "wrong";    label = "Wrong item delivered" }
+    new { key = "delay";    label = "Delivery delay" }
+    new { key = "payment";  label = "Payment issue" }
+    new { key = "account";  label = "Account / KYC" }
+    new { key = "other";    label = "Other" }
+  }
+  statuses { "open"; "in_progress"; "resolved"; "closed" }
+  priorities { "low"; "normal"; "high" }
+}
+
+payments {
+  gateway = "sandbox"
+  currency = "INR"
+  currencySymbol = "₹"
+  testCards {
+    ["4111111111111111"] = "success"
+    ["4000000000000002"] = "failure"
+    ["success@sandbox"] = "success"
+    ["failure@sandbox"] = "failure"
+  }
+}
+
+otp {
+  length = 6
+  ttlMinutes = 10
+  prototypeCode = "123456"
+}

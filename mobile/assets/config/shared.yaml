@@ -1,0 +1,132 @@
+brand:
+  name: Royal Snacks
+  tagline: Wholesale snacks, delivered to your shelf
+  supportEmail: support@royalsnacks.example
+  supportPhone: +91 90000 00000
+  royalBlue: '#1B3A8C'
+  royalBlueDark: '#0F2461'
+  gold: '#D4A017'
+  goldLight: '#F4D675'
+  ivory: '#FBF8EF'
+company:
+  legalName: Royal Snacks Foods Pvt. Ltd.
+  gstin: 09AAAAA0000A1Z5
+  stateCode: '09'
+  stateName: Uttar Pradesh
+  address: Industrial Area, Naini, Prayagraj, Uttar Pradesh 211008
+defaultLocale: en
+locales:
+- code: en
+  name: English
+  enabled: true
+- code: hi
+  name: हिन्दी
+  enabled: false
+gst:
+  allowedRates:
+  - 0
+  - 5
+  - 12
+  - 18
+  defaultRate: 12
+orders:
+  minOrderValue: 2000
+  minTotalCases: 5
+  stages:
+  - key: placed
+    label: Order placed
+    actor: customer
+    description: We received your order.
+  - key: confirmed
+    label: Confirmed
+    actor: order_manager
+    description: Order verified and confirmed.
+  - key: packing
+    label: Packing
+    actor: packaging
+    description: Our packaging station is preparing your cases.
+  - key: packed
+    label: Packed
+    actor: packaging
+    description: Packed and waiting at the warehouse.
+  - key: dispatched
+    label: Left warehouse
+    actor: warehouse
+    description: Your parcel has left the warehouse.
+  - key: out_for_delivery
+    label: Out for delivery
+    actor: delivery
+    description: Our delivery partner is on the way.
+  - key: delivered
+    label: Delivered
+    actor: delivery
+    description: Delivered to your shop.
+  customerCancellable:
+  - placed
+  - confirmed
+  paymentMethods:
+  - cod
+  - credit
+  - online
+pricingSlabs:
+- minSubtotal: 10000
+  percent: 2
+- minSubtotal: 25000
+  percent: 4
+- minSubtotal: 50000
+  percent: 6
+shopTypes:
+- Kirana / General store
+- Supermarket
+- Convenience store
+- Medical / Pharmacy store
+- Sweet shop / Bakery
+- Canteen / Institution
+- Other
+serviceAreas:
+- district: Prayagraj
+  pinPrefix: '211'
+  hubCode: PRG
+- district: Varanasi
+  pinPrefix: '221'
+  hubCode: VNS
+- district: Kanpur
+  pinPrefix: '208'
+  hubCode: KNP
+- district: Lucknow
+  pinPrefix: '226'
+  hubCode: LKO
+support:
+  categories:
+  - key: damaged
+    label: Damaged product
+  - key: missing
+    label: Missing item
+  - key: wrong
+    label: Wrong item delivered
+  - key: delay
+    label: Delivery delay
+  - key: payment
+    label: Payment issue
+  - key: account
+    label: Account / KYC
+  - key: other
+    label: Other
+  statuses:
+  - open
+  - in_progress
+  - resolved
+  - closed
+  priorities:
+  - low
+  - normal
+  - high
+payments:
+  gateway: sandbox
+  currency: INR
+  currencySymbol: ₹
+  testCards:
+    '4111111111111111': success
+    '4000000000000002': failure
+    success@sandbox: success
+    failure@sandbox: failure
