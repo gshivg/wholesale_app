@@ -1,0 +1,196 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../core/format.dart';
+import '../../core/theme.dart';
+import '../../l10n/app_localizations.dart';
+import '../../models/models.dart';
+import '../../providers/providers.dart';
+import '../../widgets/widgets.dart';
+import '../cart/payment_sheet.dart';
+
+class OrderDetailScreen extends ConsumerStatefulWidget {
+  const OrderDetailScreen({super.key, required this.id});
+  final int id;
+  @override
+  ConsumerState<OrderDetailScreen> createState() => _OrderDetailScreenState();
+}
+
+class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
+  Timer? _poll;
+
+  @override
+  void initState() {
+    super.initState();
+    // Live tracking: refresh while the screen is open.
+    _poll = Timer.periodic(const Duration(seconds: 20), (_) => ref.invalidate(orderProvider(widget.id)));
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _run(Future<void> Function() f, {String? ok}) async {
+    try {
+      await f();
+      if (ok != null && mounted) showSnack(context, ok);
+    } catch (e) {
+      if (mounted) showSnack(context, errorText(e), error: true);
+    }
+  }
+
+  Future<void> _cancel() async {
+    final reason = TextEditingController();
+    final go = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Cancel this order?'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Text('Stock is released immediately. Any online payment will be refunded.'),
+          const SizedBox(height: 12),
+          TextField(controller: reason, decoration: const InputDecoration(labelText: 'Reason (optional)')),
+        ]),
+        actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Keep order')), FilledButton(style: FilledButton.styleFrom(backgroundColor: Theme.of(c).colorScheme.error), onPressed: () => Navigator.pop(c, true), child: const Text('Cancel order'))],
+      ),
+    );
+    if (go == true) await _run(() => ref.read(orderActionsProvider).cancel(widget.id, reason.text.trim()), ok: 'Order cancelled');
+  }
+
+  Future<void> _invoice() => _run(() async {
+        final url = await ref.read(orderActionsProvider).invoiceUrl(widget.id);
+        if (!await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) throw 'Could not open the invoice';
+      });
+
+  Future<void> _pay() => _run(() async {
+        final intent = await ref.read(orderActionsProvider).startPayment(widget.id);
+        if (mounted) await showPaymentSheet(context, orderId: widget.id, intent: intent);
+      });
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final async = ref.watch(orderProvider(widget.id));
+    return Scaffold(
+      appBar: AppBar(title: Text(async.value?.summary.number ?? l.trackOrder)),
+      body: AsyncBody<OrderDetail>(
+        value: async,
+        onRetry: () => ref.invalidate(orderProvider(widget.id)),
+        builder: (d) {
+          final cs = context.cs;
+          final s = d.summary;
+          return RefreshIndicator(
+            onRefresh: () async => ref.invalidate(orderProvider(widget.id)),
+            child: ListView(padding: const EdgeInsets.all(16), children: [
+              Row(children: [
+                Expanded(child: Text('Placed ${fmtDateTime(s.placedAt)}', style: TextStyle(color: cs.onSurfaceVariant))),
+                StatusChip(s.status, label: s.statusLabel),
+              ]),
+              const SizedBox(height: 12),
+              Card(child: Padding(padding: const EdgeInsets.all(16), child: OrderTracker(stages: d.stages, status: s.status))),
+              if (s.status == 'cancelled' || s.status == 'returned')
+                Padding(padding: const EdgeInsets.only(top: 12), child: Banner2(icon: Icons.cancel_outlined, tone: BannerTone.error, child: Text('Order ${s.status}${d.cancelReason != null ? ': ${d.cancelReason}' : ''}'))),
+              if (d.deliveryOtp != null) ...[
+                const SizedBox(height: 12),
+                Card(
+                  color: cs.tertiaryContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(children: [
+                      Row(children: [
+                        Icon(Icons.local_shipping_outlined, color: cs.onTertiaryContainer),
+                        const SizedBox(width: 10),
+                        Expanded(child: Text(s.status == 'out_for_delivery' ? 'Your order is out for delivery' : 'Your parcel has left the warehouse', style: context.tt.titleSmall?.copyWith(color: cs.onTertiaryContainer))),
+                      ]),
+                      if (d.agentName != null) Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(onPressed: () => launchUrl(Uri.parse('tel:${d.agentPhone}')), icon: const Icon(Icons.call, size: 18), label: Text('${d.agentName} · ${d.agentPhone}')),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(l.deliveryOtp.toUpperCase(), style: TextStyle(fontSize: 11, letterSpacing: 1, color: cs.onTertiaryContainer)),
+                      Container(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: .6), borderRadius: BorderRadius.circular(12)),
+                        child: Text(d.deliveryOtp!, style: TextStyle(fontSize: 38, fontWeight: FontWeight.w800, letterSpacing: 12, color: cs.primary)),
+                      ),
+                      Text(l.deliveryOtpHint, style: TextStyle(color: cs.onTertiaryContainer, fontSize: 12)),
+                    ]),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Card(
+                child: Column(children: [
+                  for (final i in d.items)
+                    ListTile(
+                      title: Text(i.name),
+                      subtitle: Text('${i.label}${i.freeQuantity > 0 ? ' · +${i.freeQuantity} free' : ''}\n${i.quantity} × ${inr(i.unitPrice)} · GST ${trimNum(i.gstRate)}%'),
+                      isThreeLine: true,
+                      trailing: Text(inr(i.total), style: context.tt.titleSmall),
+                    ),
+                ]),
+              ),
+              const SizedBox(height: 12),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(children: [
+                    _kv('Gross', inr(d.total('gross'))),
+                    if (d.total('deal_discount') > 0) _kv('Deals', '−${inr(d.total('deal_discount'))}', good: true),
+                    if (d.total('slab_discount') > 0) _kv('Volume discount', '−${inr(d.total('slab_discount'))}', good: true),
+                    if (d.total('coupon_discount') > 0) _kv('Coupon ${d.totals['coupon_code'] ?? ''}', '−${inr(d.total('coupon_discount'))}', good: true),
+                    _kv('Taxable', inr(d.total('taxable'))),
+                    if (d.total('cgst') > 0) ...[_kv('CGST', inr(d.total('cgst')), muted: true), _kv('SGST', inr(d.total('sgst')), muted: true)],
+                    if (d.total('igst') > 0) _kv('IGST', inr(d.total('igst')), muted: true),
+                    const Divider(height: 20),
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(l.total, style: context.tt.titleMedium), Text(inr(s.total), style: context.tt.titleMedium?.copyWith(color: cs.primary, fontWeight: FontWeight.w700))]),
+                    const SizedBox(height: 6),
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Payment · ${s.paymentMethod.toUpperCase()}'), StatusChip(s.paymentStatus)]),
+                  ]),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Card(child: ListTile(leading: const Icon(Icons.location_on_outlined), title: Text('${d.address['name']}'), subtitle: Text('${d.address['line1']}${d.address['line2'] != null ? ', ${d.address['line2']}' : ''}\n${d.address['city']} ${d.address['pincode']}\nDispatched from ${d.hubName}'), isThreeLine: true)),
+              const SizedBox(height: 12),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Timeline', style: context.tt.titleMedium),
+                    const SizedBox(height: 8),
+                    for (final e in d.events.reversed)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Padding(padding: const EdgeInsets.only(top: 5, right: 12), child: Icon(Icons.circle, size: 10, color: cs.primary)),
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(e.label, style: context.tt.titleSmall), Text('${fmtDateTime(e.at)}${e.note != null ? ' · ${e.note}' : ''}', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12))])),
+                        ]),
+                      ),
+                  ]),
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (d.canPay) FilledButton.icon(style: FilledButton.styleFrom(backgroundColor: context.gold, foregroundColor: cs.onTertiary), onPressed: _pay, icon: const Icon(Icons.payments_outlined), label: Text('Pay ${inr(s.total)} now')),
+              if (d.invoiceAvailable) Padding(padding: const EdgeInsets.only(top: 8), child: FilledButton.icon(onPressed: _invoice, icon: const Icon(Icons.picture_as_pdf_outlined), label: Text(l.downloadInvoice))),
+              Padding(padding: const EdgeInsets.only(top: 8), child: FilledButton.tonalIcon(onPressed: () => _run(() async { await ref.read(orderActionsProvider).reorder(widget.id); if (context.mounted) context.push('/cart'); }), icon: const Icon(Icons.replay), label: Text(l.reorder))),
+              Padding(padding: const EdgeInsets.only(top: 8), child: OutlinedButton.icon(onPressed: () => context.push('/support/new?order=${s.id}'), icon: const Icon(Icons.support_agent_outlined), label: Text(l.reportProblem))),
+              if (d.canCancel) Padding(padding: const EdgeInsets.only(top: 8), child: TextButton(style: TextButton.styleFrom(foregroundColor: cs.error), onPressed: _cancel, child: Text(l.cancelOrder))),
+              const SizedBox(height: 24),
+            ]),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _kv(String k, String v, {bool good = false, bool muted = false}) {
+    final color = good ? const Color(0xFF1B6B3A) : (muted ? context.cs.onSurfaceVariant : null);
+    return Padding(padding: const EdgeInsets.symmetric(vertical: 3), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(k, style: TextStyle(color: color)), Text(v, style: TextStyle(color: color))]));
+  }
+}

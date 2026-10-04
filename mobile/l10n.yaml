@@ -1,0 +1,7 @@
+# Add another language by dropping lib/l10n/app_<code>.arb next to app_en.arb
+# and flipping `enabled` for it in shared/config.pkl (then `make config`).
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false
