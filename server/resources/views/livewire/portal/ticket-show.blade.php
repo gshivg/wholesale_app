@@ -6,7 +6,7 @@
 
   @if(in_array($t->status, ['resolved', 'closed']))
     <div class="card gold row between wrap"><div><b>This ticket is {{ $t->status }}.</b> Reply below to reopen it.</div>
-      <div class="row">@foreach([1,2,3,4,5] as $n)<button class="icon-btn" wire:click="rate({{ $n }})" title="{{ $n }} star"><span class="material-symbols-outlined" style="color:#B8860B;font-variation-settings:'FILL' {{ ($t->rating ?? 0) >= $n ? 1 : 0 }}">star</span></button>@endforeach</div></div>
+      <div class="row">@foreach([1,2,3,4,5] as $n)<button class="icon-btn" wire:click="rate({{ $n }})" title="{{ $n }} star"><span style="color:#B8860B;font-size:24px">{{ ($t->rating ?? 0) >= $n ? '★' : '☆' }}</span></button>@endforeach</div></div>
   @endif
 
   <form class="card stack" wire:submit="send">
