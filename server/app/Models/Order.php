@@ -50,6 +50,11 @@ class Order extends Model
         return $this->belongsTo(Hub::class);
     }
 
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
+    }
+
     public function agent(): BelongsTo
     {
         return $this->belongsTo(User::class, 'delivery_agent_id');

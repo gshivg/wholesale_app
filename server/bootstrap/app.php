@@ -12,7 +12,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'role' => \App\Http\Middleware\EnsureRole::class,
+            'approved' => \App\Http\Middleware\EnsureApprovedShop::class,
+            'json' => \App\Http\Middleware\ForceJson::class,
+        ]);
+        $middleware->web(append: [\App\Http\Middleware\SetLocale::class]);
+        $middleware->api(prepend: [\App\Http\Middleware\ForceJson::class], append: [\App\Http\Middleware\SetLocale::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
