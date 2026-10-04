@@ -106,6 +106,15 @@ class AuthController extends Controller
         ], 201);
     }
 
+    /** Phone verified → alert the people who approve shops. Shared with the web wizard. */
+    public static function markVerified(User $user): void
+    {
+        $user->update(['phone_verified_at' => now()]);
+        foreach (User::whereIn('role', [Role::OrderManager->value, Role::SuperAdmin->value])->get() as $u) {
+            $u->notify(new AppNotice('New shop registration', "{$user->shop->shop_name} ({$user->shop->city}) is waiting for approval.", 'account', ['shop_id' => $user->shop->id]));
+        }
+    }
+
     public function sendOtp(Request $request): JsonResponse
     {
         $data = $request->validate(['phone' => ['required', 'regex:/^[6-9]\d{9}$/'], 'purpose' => ['required', Rule::in(['register', 'reset'])]]);
@@ -123,11 +132,7 @@ class AuthController extends Controller
         if (! $user || ! $this->otp->verify($data['phone'], 'register', $data['code'])) {
             throw ValidationException::withMessages(['code' => 'Incorrect or expired OTP.']);
         }
-        $user->update(['phone_verified_at' => now()]);
-
-        foreach (User::whereIn('role', [Role::OrderManager->value, Role::SuperAdmin->value])->get() as $u) {
-            $u->notify(new AppNotice('New shop registration', "{$user->shop->shop_name} ({$user->shop->city}) is waiting for approval.", 'account', ['shop_id' => $user->shop->id]));
-        }
+        self::markVerified($user);
 
         return $this->tokenResponse($user, $request);
     }

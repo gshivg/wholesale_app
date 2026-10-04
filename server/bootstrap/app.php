@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'approved' => \App\Http\Middleware\EnsureApprovedShop::class,
             'json' => \App\Http\Middleware\ForceJson::class,
         ]);
+        $middleware->redirectUsersTo(fn () => auth()->user()->role->home());
         $middleware->web(append: [\App\Http\Middleware\SetLocale::class]);
         $middleware->api(prepend: [\App\Http\Middleware\ForceJson::class], append: [\App\Http\Middleware\SetLocale::class]);
     })
