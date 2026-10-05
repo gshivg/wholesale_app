@@ -17,8 +17,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _form = GlobalKey<FormState>();
-  final _phone = TextEditingController();
-  final _password = TextEditingController();
+  final _phone = TextEditingController(text: kDemo ? '9100000001' : '');
+  final _password = TextEditingController(text: kDemo ? 'password' : '');
   bool _busy = false, _obscure = true;
 
   Future<void> _submit() async {
@@ -72,6 +72,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: Form(
                   key: _form,
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    if (kDemo) ...[
+                      const Banner2(
+                        icon: Icons.science_outlined,
+                        tone: BannerTone.warn,
+                        child: Text('Demo mode — no server needed. Sample data is built in and resets every time the app is closed. Log in with any valid mobile number and password.'),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     Text('Welcome back', style: context.tt.headlineSmall),
                     const SizedBox(height: 4),
                     Text('Log in to order, track deliveries and get support.', style: TextStyle(color: context.cs.onSurfaceVariant)),

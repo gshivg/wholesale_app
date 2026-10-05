@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:yaml/yaml.dart';
 
+/// `flutter run --dart-define=DEMO=true` (or `make demo`): the app runs against a built-in,
+/// in-memory fake server with seed data. Nothing is persisted; every launch starts fresh.
+const bool kDemo = bool.fromEnvironment('DEMO');
+
 /// Values that come from the single pkl source of truth (`shared/config.pkl`),
 /// rendered to `assets/config/shared.yaml` by `make config`.
 class AppConfig {
@@ -63,6 +67,10 @@ class AppConfig {
     }
     return null;
   }
+
+  List<({double min, double percent})> get slabs => [
+        for (final s in _y['pricingSlabs'] as YamlList) (min: (s['minSubtotal'] as num).toDouble(), percent: (s['percent'] as num).toDouble()),
+      ];
 
   int get minOrderValue => (_y['orders'] as YamlMap)['minOrderValue'] as int;
   int get minTotalCases => (_y['orders'] as YamlMap)['minTotalCases'] as int;

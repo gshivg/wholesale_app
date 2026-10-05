@@ -52,6 +52,14 @@ flutter pub get
 flutter run --dart-define=API_BASE=http://<server-host>:8000   # Android emulator default: http://10.0.2.2:8000
 ```
 
+**Demo mode (no server, no database).** Build or run the app with `--dart-define=DEMO=true` (Flutter has no custom `--demo` switch; `--dart-define` is the standard way) — or `make demo`, `make demo-apk`, `make demo-web`:
+
+```bash
+cd mobile && flutter run --dart-define=DEMO=true
+```
+
+The app then uses a built-in, in-memory fake of the API (`mobile/lib/demo/demo_api.dart`) with seed data: 22 products, deals, coupons, three orders (delivered, out for delivery with an OTP, being packed), a support ticket and notifications. Pricing, GST, minimums, slabs and coupons use the same rules as the server. Nothing is saved — closing the app resets everything. Log in with any valid 10-digit number and any password (it is prefilled); registering creates a pending account; orders you place move through the stages on their own over ~90 seconds; online payments use the sandbox cards below. Only the invoice PDF needs the real server.
+
 **Demo logins** (password `password`; the mobile number is the username on both web and app):
 
 | Who | Mobile |

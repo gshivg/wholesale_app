@@ -160,6 +160,7 @@ class AccountScreen extends ConsumerWidget {
                   _row('Available', inr(shop.creditAvailable), bold: true),
                 ]))),
               ),
+              if (kDemo) const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 8), child: Banner2(icon: Icons.science_outlined, tone: BannerTone.warn, child: Text('Demo mode: built-in sample data, no server. Everything resets when the app is closed.'))),
               ListTile(leading: const Icon(Icons.edit_outlined), title: const Text('Edit contact & address'), trailing: const Icon(Icons.chevron_right), onTap: () => _editProfile(context, ref)),
               ListTile(leading: const Icon(Icons.local_offer_outlined), title: Text(l.offers), trailing: const Icon(Icons.chevron_right), onTap: () => context.push('/offers')),
               ListTile(leading: const Icon(Icons.lock_reset_outlined), title: const Text('Change password'), trailing: const Icon(Icons.chevron_right), onTap: () => _changePassword(context, ref)),

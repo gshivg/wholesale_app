@@ -4,12 +4,15 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/api.dart';
+import '../core/app_config.dart';
+import '../demo/demo_api.dart';
 import '../models/models.dart';
 
 final prefsProvider = Provider<SharedPreferences>((ref) => throw UnimplementedError('override in main'));
 
 final apiProvider = Provider<Api>((ref) {
-  final api = Api(ref.watch(prefsProvider));
+  final prefs = ref.watch(prefsProvider);
+  final api = kDemo ? DemoApi(prefs) : Api(prefs);
   api.locale = ref.watch(localeProvider);
   api.onUnauthorized = () => ref.read(authProvider.notifier).sessionExpired();
   return api;
